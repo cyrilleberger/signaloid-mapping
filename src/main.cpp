@@ -95,14 +95,14 @@ main(int argc, char *  argv[])
 		}
 
 		// First estimate the robot position
-		point estimated_robot_pos = compute_robot_position_observation(robot_pos);
+		point estimated_robot_pos = {0, 0};
 		for(std::size_t i = 0; i < observations.size(); ++i)
 		{
 			estimated_robot_pos.first += current_map[i].first - observations[i].first;
 			estimated_robot_pos.second += current_map[i].second - observations[i].second;
 		}
-		estimated_robot_pos.first /= (observations.size() + 1);
-		estimated_robot_pos.second /= (observations.size() + 1);
+		estimated_robot_pos.first /= observations.size();
+		estimated_robot_pos.second /= observations.size();
 
 		// Update map
 		for(std::size_t i = 0; i < observations.size(); ++i)
