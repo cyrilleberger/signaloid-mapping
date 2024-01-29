@@ -10,25 +10,38 @@
 
 #else
 
+double UxHwDoubleGaussDist(double mu, double /*sigma*/)
+{
+	return mu;
+}
+
+double  UxHwDoubleUniformDist(double a, double b)
+{
+	return 0.5 * (a + b);
+}
+
+#endif
+
+
 #include <random>
 
 // emulate signaloid API
 
 std::default_random_engine generator;
 
-double UxHwDoubleGaussDist(double mu, double sigma)
+double normal_distribution(double mu, double sigma)
 {
   std::normal_distribution<double> gauss_dist{mu, sigma};
-	return gauss_dist(generator);
+	return UxHwDoubleGaussDist(gauss_dist(generator), sigma);
 }
 
-double  UxHwDoubleUniformDist(double a, double b)
+double  uniform_distribution(double a, double b)
 {
-	std::uniform_real_distribution<> uniform_dist{-1.0, 1.0};
-	return uniform_dist(generator);
+	std::uniform_real_distribution<> uniform_dist{a, b};
+	double v = uniform_dist(generator);
+	return UxHwDoubleUniformDist(v + a, v + b);
 }
 
-#endif
 
 using point = std::pair<double, double>;
 
@@ -47,19 +60,19 @@ std::vector<point> landmarks = {
 point
 compute_landmark_observation(const point & robot_position, const point & landmark)
 {
-	return { UxHwDoubleGaussDist(landmark.first - robot_position.first, 0.1), UxHwDoubleGaussDist(landmark.second - robot_position.second, 0.1) };
+	return { normal_distribution(landmark.first - robot_position.first, 0.1), normal_distribution(landmark.second - robot_position.second, 0.1) };
 }
 
 point
 compute_robot_position_observation(const point & robot_position)
 {
-	return { UxHwDoubleGaussDist(robot_position.first, 0.1), UxHwDoubleGaussDist(robot_position.second, 0.1) };
+	return { normal_distribution(robot_position.first, 0.1), normal_distribution(robot_position.second, 0.1) };
 }
 
 point
 random_robot_location()
 {
-	return {UxHwDoubleUniformDist(-1.0, 1.0), UxHwDoubleUniformDist(-1.0, 1.0)};
+	return {uniform_distribution(-1.0, 1.0), uniform_distribution(-1.0, 1.0)};
 }
 
 double
@@ -112,7 +125,7 @@ main(int argc, char *  argv[])
 			map_point.first = (iter * map_point.first + (obs_point.first + estimated_robot_pos.first)) / (iter + 1);
 			map_point.second = (iter * map_point.second + (obs_point.second + estimated_robot_pos.second)) / (iter + 1);
 		}
-		if(iter % 100 == 0)
+		if(iter % 100 == 1)
 		{
 			std::cout << "Position: " << compute_error(robot_pos, estimated_robot_pos) << std::endl;
 			for(std::size_t i = 0; i < observations.size(); ++i)
