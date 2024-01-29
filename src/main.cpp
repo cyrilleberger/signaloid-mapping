@@ -71,7 +71,7 @@ compute_error(const point& _a, const point& _b)
 int
 main(int argc, char *  argv[])
 {
-	std::size_t observations_count = 1000000;
+	std::size_t observations_count = 10000;
 
 	std::vector<point> current_map;
 
