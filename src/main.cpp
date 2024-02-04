@@ -10,6 +10,8 @@
 
 #else
 
+// approximate signaloid API
+
 double UxHwDoubleGaussDist(double mu, double /*sigma*/)
 {
 	return mu;
@@ -20,14 +22,22 @@ double  UxHwDoubleUniformDist(double a, double b)
 	return 0.5 * (a + b);
 }
 
+double  UxHwDoubleBayesLaplace(double (*likelihood)(double), double prior, double evidence)
+{
+	return 0.5 * (prior + evidence);
+}
+
 #endif
 
 
 #include <random>
 
-// emulate signaloid API
-
 std::default_random_engine generator;
+
+double noisy_sensor(double measurand)
+{
+	return UxHwDoubleGaussDist(measurand, 0.2);
+}
 
 double normal_distribution(double mu, double sigma)
 {
@@ -91,8 +101,7 @@ main(int argc, char *  argv[])
 	// First position is used to initialize the map
 	for(std::size_t i = 0; i < landmarks.size(); ++i)
 	{
-		// point pt = compute_landmark_observation({0, 0}, landmarks[i]);
-		point pt = landmarks[i];
+		point pt = compute_landmark_observation({0, 0}, landmarks[i]);
 		current_map.push_back(pt);
 	}
 
@@ -111,23 +120,29 @@ main(int argc, char *  argv[])
 		point estimated_robot_pos = {0, 0};
 		for(std::size_t i = 0; i < observations.size(); ++i)
 		{
-			estimated_robot_pos.first += current_map[i].first - observations[i].first;
-			estimated_robot_pos.second += current_map[i].second - observations[i].second;
+			double obs_x = current_map[i].first - observations[i].first;
+			double obs_y = current_map[i].second - observations[i].second;
+			if(i == 0)
+			{
+				estimated_robot_pos.first = obs_x;
+				estimated_robot_pos.second = obs_y;
+			} else {
+				estimated_robot_pos.first = UxHwDoubleBayesLaplace(&noisy_sensor, estimated_robot_pos.first, obs_x);
+				estimated_robot_pos.second = UxHwDoubleBayesLaplace(&noisy_sensor, estimated_robot_pos.second, obs_y);
+			}
 		}
-		estimated_robot_pos.first /= observations.size();
-		estimated_robot_pos.second /= observations.size();
 
 		// Update map
 		for(std::size_t i = 0; i < observations.size(); ++i)
 		{
 			point& map_point = current_map[i];
 			point obs_point = observations[i];
-			map_point.first = (iter * map_point.first + (obs_point.first + estimated_robot_pos.first)) / (iter + 1);
-			map_point.second = (iter * map_point.second + (obs_point.second + estimated_robot_pos.second)) / (iter + 1);
+			map_point.first = UxHwDoubleBayesLaplace(&noisy_sensor, map_point.first, estimated_robot_pos.first + obs_point.first);
+			map_point.second = UxHwDoubleBayesLaplace(&noisy_sensor, map_point.first, estimated_robot_pos.first + obs_point.second);
 		}
 		if(iter % 100 == 1)
 		{
-			std::cout << "Position: " << compute_error(robot_pos, estimated_robot_pos) << std::endl;
+			std::cout << "Iter: " << iter << " position: x: " << estimated_robot_pos.first << " y: " << estimated_robot_pos.second << " err: " << compute_error(robot_pos, estimated_robot_pos) << std::endl;
 			for(std::size_t i = 0; i < observations.size(); ++i)
 			{
 				std::cout << "Iter: " << iter << " landmark: " << i << " x: " << current_map[i].first << " y: " << current_map[i].second << " err: " << compute_error(current_map[i], landmarks[i]) << std::endl;
