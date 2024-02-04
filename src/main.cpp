@@ -71,7 +71,7 @@ std::vector<point> landmarks = {
 };
 
 point
-compute_landmark_observation(const point & robot_position, const point & landmark)
+compute_landmark_observation(const point & robot_position, const point & landmark, double uncertainty = landmark_sensor_uncertainty)
 {
 	return { normal_distribution(landmark.first - robot_position.first, landmark_sensor_uncertainty), normal_distribution(landmark.second - robot_position.second, landmark_sensor_uncertainty) };
 }
@@ -104,7 +104,8 @@ main(int argc, char *  argv[])
 	// First position is used to initialize the map
 	for(std::size_t i = 0; i < landmarks.size(); ++i)
 	{
-		point pt = compute_landmark_observation({0, 0}, landmarks[i]);
+		point pt = compute_landmark_observation({0, 0}, landmarks[i],
+											landmark_sensor_uncertainty + robot_position_sensor_uncertainty);
 		current_map.push_back(pt);
 	}
 	std::cout << "========== Initial map ==========" << std::endl;
@@ -134,6 +135,7 @@ main(int argc, char *  argv[])
 			point obs_point = observations[i];
 			map_point.first = UxHwDoubleBayesLaplace(&noisy_landmark_sensor, map_point.first, robot_pos_observation.first + obs_point.first);
 			map_point.second = UxHwDoubleBayesLaplace(&noisy_landmark_sensor, map_point.second, robot_pos_observation.second + obs_point.second);
+			std::cout << robot_pos_observation.first + obs_point.first << " " << robot_pos_observation.second + obs_point.second << std::endl;
 		}
 		// if(iter % 100 == 1)
 		{
