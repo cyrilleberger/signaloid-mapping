@@ -94,7 +94,7 @@ compute_error(const point& _a, const point& _b)
 int
 main(int argc, char *  argv[])
 {
-	std::size_t observations_count = 10000;
+	std::size_t observations_count = 100;
 
 	std::vector<point> current_map;
 
@@ -103,6 +103,11 @@ main(int argc, char *  argv[])
 	{
 		point pt = compute_landmark_observation({0, 0}, landmarks[i]);
 		current_map.push_back(pt);
+	}
+	std::cout << "========== Initial map ==========" << std::endl;
+	for(std::size_t i = 0; i < current_map.size(); ++i)
+	{
+		std::cout << "Landmark: " << i << " x: " << current_map[i].first << " y: " << current_map[i].second << " err: " << compute_error(current_map[i], landmarks[i]) << std::endl;
 	}
 
 	// Then process the observation
@@ -140,7 +145,7 @@ main(int argc, char *  argv[])
 			map_point.first = UxHwDoubleBayesLaplace(&noisy_sensor, map_point.first, estimated_robot_pos.first + obs_point.first);
 			map_point.second = UxHwDoubleBayesLaplace(&noisy_sensor, map_point.second, estimated_robot_pos.second + obs_point.second);
 		}
-		if(iter % 100 == 1)
+		// if(iter % 100 == 1)
 		{
 			std::cout << "=========== Iter " << iter << "===========" << std::endl;
 			std::cout << "Actual robot position: x: " << robot_pos.first << " y: " << robot_pos.second << std::endl;
@@ -148,6 +153,10 @@ main(int argc, char *  argv[])
 			for(std::size_t i = 0; i < current_map.size(); ++i)
 			{
 				std::cout << "Landmark: " << i << " x: " << current_map[i].first << " y: " << current_map[i].second << " err: " << compute_error(current_map[i], landmarks[i]) << std::endl;
+			}
+			for(std::size_t i = 0; i < observations.size(); ++i)
+			{
+				std::cout << "Observation: " << i << " x: " << observations[i].first << " y: " << observations[i].second << std::endl;
 			}
 
 		}
