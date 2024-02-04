@@ -34,9 +34,12 @@ double  UxHwDoubleBayesLaplace(double (*likelihood)(double), double prior, doubl
 
 std::default_random_engine generator;
 
-double noisy_sensor(double measurand)
+double landmark_sensor_uncertainty = 0.03;
+double robot_position_sensor_uncertainty = 0.05;
+
+double noisy_landmark_sensor(double measurand)
 {
-	return UxHwDoubleGaussDist(measurand, 0.2);
+	return UxHwDoubleGaussDist(measurand, landmark_sensor_uncertainty);
 }
 
 double normal_distribution(double mu, double sigma)
@@ -70,13 +73,13 @@ std::vector<point> landmarks = {
 point
 compute_landmark_observation(const point & robot_position, const point & landmark)
 {
-	return { normal_distribution(landmark.first - robot_position.first, 0.1), normal_distribution(landmark.second - robot_position.second, 0.1) };
+	return { normal_distribution(landmark.first - robot_position.first, landmark_sensor_uncertainty), normal_distribution(landmark.second - robot_position.second, landmark_sensor_uncertainty) };
 }
 
 point
 compute_robot_position_observation(const point & robot_position)
 {
-	return { normal_distribution(robot_position.first, 0.1), normal_distribution(robot_position.second, 0.1) };
+	return { normal_distribution(robot_position.first, robot_position_sensor_uncertainty), normal_distribution(robot_position.second, robot_position_sensor_uncertainty) };
 }
 
 point
@@ -132,8 +135,8 @@ main(int argc, char *  argv[])
 				estimated_robot_pos.first = obs_x;
 				estimated_robot_pos.second = obs_y;
 			} else {
-				estimated_robot_pos.first = UxHwDoubleBayesLaplace(&noisy_sensor, estimated_robot_pos.first, obs_x);
-				estimated_robot_pos.second = UxHwDoubleBayesLaplace(&noisy_sensor, estimated_robot_pos.second, obs_y);
+				estimated_robot_pos.first = UxHwDoubleBayesLaplace(&noisy_landmark_sensor, estimated_robot_pos.first, obs_x);
+				estimated_robot_pos.second = UxHwDoubleBayesLaplace(&noisy_landmark_sensor, estimated_robot_pos.second, obs_y);
 			}
 			std::cout << "After landmark " << i << " robot pose estimation: x: " << estimated_robot_pos.first << " y: " << estimated_robot_pos.second << " err: " << compute_error(robot_pos, estimated_robot_pos) << std::endl;
 		}
@@ -143,8 +146,8 @@ main(int argc, char *  argv[])
 		{
 			point& map_point = current_map[i];
 			point obs_point = observations[i];
-			map_point.first = UxHwDoubleBayesLaplace(&noisy_sensor, map_point.first, estimated_robot_pos.first + obs_point.first);
-			map_point.second = UxHwDoubleBayesLaplace(&noisy_sensor, map_point.second, estimated_robot_pos.second + obs_point.second);
+			map_point.first = UxHwDoubleBayesLaplace(&noisy_landmark_sensor, map_point.first, estimated_robot_pos.first + obs_point.first);
+			map_point.second = UxHwDoubleBayesLaplace(&noisy_landmark_sensor, map_point.second, estimated_robot_pos.second + obs_point.second);
 		}
 		// if(iter % 100 == 1)
 		{
