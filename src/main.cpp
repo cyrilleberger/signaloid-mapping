@@ -138,22 +138,30 @@ main(int argc, char *  argv[])
 			point& map_point = current_map[i];
 			point obs_point = observations[i];
 			map_point.first = UxHwDoubleBayesLaplace(&noisy_sensor, map_point.first, estimated_robot_pos.first + obs_point.first);
-			map_point.second = UxHwDoubleBayesLaplace(&noisy_sensor, map_point.first, estimated_robot_pos.first + obs_point.second);
+			map_point.second = UxHwDoubleBayesLaplace(&noisy_sensor, map_point.second, estimated_robot_pos.second + obs_point.second);
 		}
 		if(iter % 100 == 1)
 		{
-			std::cout << "Iter: " << iter << " position: x: " << estimated_robot_pos.first << " y: " << estimated_robot_pos.second << " err: " << compute_error(robot_pos, estimated_robot_pos) << std::endl;
-			for(std::size_t i = 0; i < observations.size(); ++i)
+			std::cout << "=========== Iter " << iter << "===========" << std::endl;
+			std::cout << "Actual robot position: x: " << robot_pos.first << " y: " << robot_pos.second << std::endl;
+			std::cout << "Estimated robot position: x: " << estimated_robot_pos.first << " y: " << estimated_robot_pos.second << " err: " << compute_error(robot_pos, estimated_robot_pos) << std::endl;
+			for(std::size_t i = 0; i < current_map.size(); ++i)
 			{
-				std::cout << "Iter: " << iter << " landmark: " << i << " x: " << current_map[i].first << " y: " << current_map[i].second << " err: " << compute_error(current_map[i], landmarks[i]) << std::endl;
+				std::cout << "Landmark: " << i << " x: " << current_map[i].first << " y: " << current_map[i].second << " err: " << compute_error(current_map[i], landmarks[i]) << std::endl;
 			}
 
 		}
 	}
 
+	std::cout << "========== Ground truth ==========" << std::endl;
 	for(std::size_t i = 0; i < current_map.size(); ++i)
 	{
-		std::cout << "Final iter landmark: " << i << " x: " << current_map[i].first << " y: " << current_map[i].second << std::endl;
+		std::cout << "Landmark: " << i << " x: " << landmarks[i].first << " y: " << landmarks[i].second << std::endl;
+	}
+	std::cout << "=========== Estimated ============" << std::endl;
+	for(std::size_t i = 0; i < current_map.size(); ++i)
+	{
+		std::cout << "Landmark: " << i << " x: " << current_map[i].first << " y: " << current_map[i].second << " err: " << compute_error(current_map[i], landmarks[i]) << std::endl;
 	}
 	return 0;
 }
