@@ -123,41 +123,31 @@ main(int argc, char *  argv[])
 		{
 			observations.push_back(compute_landmark_observation(robot_pos, landmarks[i]));
 		}
+		point robot_pos_observation = compute_robot_position_observation(robot_pos);
 
-		// First estimate the robot position
-		point estimated_robot_pos = {0, 0};
-		for(std::size_t i = 0; i < observations.size(); ++i)
-		{
-			double obs_x = current_map[i].first - observations[i].first;
-			double obs_y = current_map[i].second - observations[i].second;
-			if(i == 0)
-			{
-				estimated_robot_pos.first = obs_x;
-				estimated_robot_pos.second = obs_y;
-			} else {
-				estimated_robot_pos.first = UxHwDoubleBayesLaplace(&noisy_landmark_sensor, estimated_robot_pos.first, obs_x);
-				estimated_robot_pos.second = UxHwDoubleBayesLaplace(&noisy_landmark_sensor, estimated_robot_pos.second, obs_y);
-			}
-			std::cout << "After landmark " << i << " robot pose estimation: x: " << estimated_robot_pos.first << " y: " << estimated_robot_pos.second << " err: " << compute_error(robot_pos, estimated_robot_pos) << std::endl;
-		}
+		// First measure the robot position
 
 		// Update map
 		for(std::size_t i = 0; i < observations.size(); ++i)
 		{
 			point& map_point = current_map[i];
 			point obs_point = observations[i];
-			map_point.first = UxHwDoubleBayesLaplace(&noisy_landmark_sensor, map_point.first, estimated_robot_pos.first + obs_point.first);
-			map_point.second = UxHwDoubleBayesLaplace(&noisy_landmark_sensor, map_point.second, estimated_robot_pos.second + obs_point.second);
+			map_point.first = UxHwDoubleBayesLaplace(&noisy_landmark_sensor, map_point.first, robot_pos_observation.first + obs_point.first);
+			map_point.second = UxHwDoubleBayesLaplace(&noisy_landmark_sensor, map_point.second, robot_pos_observation.second + obs_point.second);
 		}
 		// if(iter % 100 == 1)
 		{
 			std::cout << "=========== Iter " << iter << "===========" << std::endl;
 			std::cout << "Actual robot position: x: " << robot_pos.first << " y: " << robot_pos.second << std::endl;
-			std::cout << "Estimated robot position: x: " << estimated_robot_pos.first << " y: " << estimated_robot_pos.second << " err: " << compute_error(robot_pos, estimated_robot_pos) << std::endl;
+			std::cout << "Observed robot position: x: " << robot_pos_observation.first << " y: " << robot_pos_observation.second << " err: " << compute_error(robot_pos, robot_pos_observation) << std::endl;
+			double total_err = 0.0;
 			for(std::size_t i = 0; i < current_map.size(); ++i)
 			{
-				std::cout << "Landmark: " << i << " x: " << current_map[i].first << " y: " << current_map[i].second << " err: " << compute_error(current_map[i], landmarks[i]) << std::endl;
+				double err = compute_error(current_map[i], landmarks[i]);
+				std::cout << "Landmark: " << i << " x: " << current_map[i].first << " y: " << current_map[i].second << " err: " << err << std::endl;
+				total_err += err;
 			}
+			std::cout << "Total err: " << total_err << std::endl;
 			for(std::size_t i = 0; i < observations.size(); ++i)
 			{
 				std::cout << "Observation: " << i << " x: " << observations[i].first << " y: " << observations[i].second << std::endl;
