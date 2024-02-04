@@ -135,6 +135,7 @@ main(int argc, char *  argv[])
 				estimated_robot_pos.first = UxHwDoubleBayesLaplace(&noisy_sensor, estimated_robot_pos.first, obs_x);
 				estimated_robot_pos.second = UxHwDoubleBayesLaplace(&noisy_sensor, estimated_robot_pos.second, obs_y);
 			}
+			std::cout << "After landmark " << i << " robot pose estimation: x: " << estimated_robot_pos.first << " y: " << estimated_robot_pos.second << " err: " << compute_error(robot_pos, estimated_robot_pos) << std::endl;
 		}
 
 		// Update map
